@@ -1,1005 +1,503 @@
 PACKAGE syst
 
-
-
 	PUBLIC
-
 		with Deployment;
-
  		with dron_types; 		
-
 	
-
 	
-
 	
-
 		---------------------------------------------
-
 		-------------------PROCESSOR-----------------
-
 		---------------------------------------------	
-
 		
-
 		-------------
-
 		----CPU------
-
 		-------------
-
 		PROCESSOR cpu
-
 			FEATURES
-
 				VME: REQUIRES BUS ACCESS VME;
-
 			PROPERTIES
-
 				Deployment::Execution_Platform => Native;
-
 				Clock_Period => 200ns;
-
 				Scheduling_Protocol => (Posix_1003_Highest_Priority_First_Protocol);
-
 				Priority_Range => 1 .. 6;
-
   		END cpu;
-
   		
-
   		
-
   		---------------------------------------------
-
 		--------------------MEMORY-------------------
-
 		---------------------------------------------	
-
 		
-
 		-------
-
 		--VME--
-
 		-------
-
 		BUS VME		
-
 			properties
-
 				Deployment::Transport_API => BSD_Sockets;
-
 		END VME;
-
 		
-
 		--BUS IMPLEMENTATION VME.impl
-
 		
-
 		--end VME.impl;
-
 		
-
 		----------
-
 		----RAM---
-
 		----------
-
 		MEMORY RAM
-
 			FEATURES
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		END RAM;
-
 	
 
-
-
 		---------------------------------------------
-
 		-------------------DEVICES-------------------
-
 		---------------------------------------------
-
 		
-
 		--------------------
-
 		---FLYING_MODULE----
-
 		------DEVICE--------
-
 		--------------------
-
 		--flying module is responsible for drone's flight
-
 		DEVICE flying_module
-
 			FEATURES
-
 				control_in : IN DATA PORT dron_types::control_out.impl;
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		END flying_module;
-
 		
-
 		--------------------
-
 		----WEIGHT_SENSOR---
-
 		--------DEVICE------
-
 		--------------------
-
 		--weight sensor is used to check weight of package
-
 		DEVICE weight_sensor
-
 			FEATURES
-
 				weight_out : OUT DATA PORT dron_types::weight;
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		END weight_sensor;
-
 		
-
 		--------------------
-
 		----HEIGHT_SENSOR---
-
 		------DEVICE--------
-
 		--------------------
-
 		--height sensor is used to check height of drone
-
 		DEVICE height_sensor
-
 			FEATURES
-
 				height_out : OUT DATA PORT dron_types::height; 
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		END height_sensor;
-
 		
-
 		-----------------
-
 		---GPS_MODULE----
-
 		----DEVICE-------
-
 		-----------------
-
 		--gps module is used to check route
-
 		DEVICE GPS_module
-
 			FEATURES 
-
 				GPS_out : OUT DATA PORT dron_types::GPS.impl;
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		end GPS_module;
-
 		
-
 		-----------------
-
 		---WIND_SENSOR---
-
 		----DEVICE-------
-
 		-----------------
-
 		--wind sensor is used to check direction and speed of wind
-
 		DEVICE wind_sensor
-
 			FEATURES
-
 				wind_out : OUT DATA PORT dron_types::wind.impl;
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		end wind_sensor;
-
 		
-
 		-------------
-
 		----CAMERA---
-
 		----DEVICE---
-
 		-------------
-
 		--camera is used to check whether there are any obstacles on the drone's way
-
 		DEVICE camera
-
 			FEATURES
-
 				camera_out : OUT DATA PORT dron_types::camera.impl;
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		END camera;
-
 		
-
 		---------------
-
 		---NETWORK-----
-
 		---MODULE------
-
 		---DEVICE------
-
 		---------------
-
 		--network module is responsible for checking weather conditions and deciding if flight is possible or not
-
 		DEVICE network_module
-
 			FEATURES
-
 				network_in : IN DATA PORT dron_types::network.impl; 
-
 				network_out : OUT DATA PORT dron_types::network.impl; 
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		END network_module;
-
 		
-
 		--------------
-
 		---COMPASS----
-
 		---DEVICE-----
-
 		--------------
-
 		--compass is used to control route correctness
-
 		DEVICE compass
-
 			FEATURES
-
 				compass_out : OUT DATA PORT dron_types::compass;
-
 				VME: REQUIRES BUS ACCESS VME;
-
 		end compass;
-
 		
-
 			
-
 		---------------------------------------------
-
 		-----------------PROCESSES-------------------
-
 		---------------------------------------------
 
-
-
 		------------------
-
 		----CONTROLLER----
-
 		-----PROCESS------
-
 		------------------
-
 		--controller is main process consisting of thread that are relevant to maintain delivery process of drone
-
 		PROCESS controller
-
 			FEATURES
-
 				control_out : OUT DATA PORT dron_types::control_out.impl;
-
 				weight_in : IN DATA PORT dron_types::weight; 
-
 				height_in : IN DATA PORT dron_types::height; 
-
 				GPS_in : IN DATA PORT dron_types::GPS.impl;
-
 				wind_in : IN DATA PORT dron_types::wind.impl;
-
 				camera_in : IN DATA PORT dron_types::camera.impl;
-
 				network_in : IN DATA PORT dron_types::network.impl; 
-
 				network_out : OUT DATA PORT dron_types::network.impl;
-
 				compass_in : IN DATA PORT dron_types::compass;
-
 		END controller;
-
 		
-
 		PROCESS IMPLEMENTATION controller.impl
-
 			SUBCOMPONENTS
-
 				fly_thr : THREAD fly_thread.impl; 
-
 				route_thr : THREAD route_thread.impl; 
-
 				weight_thr : THREAD weight_thread.impl; 
-
 				network_module_communication_in_thr : THREAD network_module_communication_in_thread.impl; 
-
 				network_module_communication_out_thr : THREAD network_module_communication_out_thread.impl; 
-
 			CONNECTIONS 
-
 				GPS_in_route_thr_conn : PORT GPS_in -> route_thr.GPS_in;
-
 				fly_thread_flying_module_out_conn : PORT fly_thr.flying_module_out -> control_out;
-
 				weight_in_weight_thr_conn : PORT weight_in -> weight_thr.weight_in;
-
 				wind_in_fly_thr_conn : PORT wind_in -> fly_thr.wind_in;
-
 				camera_in_fly_thr_conn : PORT camera_in -> fly_thr.camera_in;
-
 				compass_in_route_thr_conn : PORT compass_in -> route_thr.compass_in;
-
 				network_in_network_module_in_thr_conn : PORT network_in -> network_module_communication_in_thr.network_in;
-
 				route_thr_fly_thr_conn : PORT route_thr.direc_out -> fly_thr.route_in;
-
 				height_in_route_thr_conn : PORT height_in -> route_thr.height_in;
-
 				network_module_in_thr_route_thr_conn : PORT network_module_communication_in_thr.net_route_out -> route_thr.net_in;
-
 				network_module_out_thr_weight_thr_conn : PORT network_module_communication_in_thr.net_weight_out -> weight_thr.weight_net_in;
-
 				weight_thr_fly_thr_conn : PORT weight_thr.weight_out -> fly_thr.weight_in;
-
 				weight_thr_netowork_module_out_thr_conn : PORT weight_thr.weight_out -> network_module_communication_out_thr.weight_in;
-
 				route_thr_network_module_out_thr_conn : PORT route_thr.pos_out -> network_module_communication_out_thr.pos_in;
-
 				network_module_out_thr_network_out_conn : PORT network_module_communication_out_thr.net_out -> network_out;
-
 			PROPERTIES
-
 				--fly thread
-
   				Dispatch_Protocol => Periodic APPLIES TO fly_thr;
-
   				Compute_Execution_Time => 10ms .. 100ms  APPLIES TO fly_thr;
-
   				Period => 200ms  APPLIES TO fly_thr;
-
   				Deadline => 105ms  APPLIES TO fly_thr;
-
   				Priority => 6  APPLIES TO fly_thr;
-
   				
-
   				--network_module_communication_in_thread
-
   				Dispatch_Protocol => Periodic APPLIES TO network_module_communication_in_thr;
-
   				Compute_Execution_Time => 1ms .. 20ms APPLIES TO network_module_communication_in_thr;
-
   				Period => 10000ms APPLIES TO network_module_communication_in_thr;
-
   				Deadline => 125 ms APPLIES TO network_module_communication_in_thr;
-
   				Priority => 5 APPLIES TO network_module_communication_in_thr;
-
   				
-
   				--weight thread
-
   				Dispatch_Protocol => Periodic APPLIES TO weight_thr;
-
   				Compute_Execution_Time => 5ms .. 5ms APPLIES TO weight_thr;
-
   				Period => 500ms APPLIES TO weight_thr;
-
   				Deadline => 130 ms APPLIES TO weight_thr;
-
   				Priority => 4 APPLIES TO weight_thr;
 
-
-
   				
-
   				--route thread
-
 			  	Dispatch_Protocol => Periodic APPLIES TO route_thr;
-
   				Compute_Execution_Time => 5ms .. 10ms APPLIES TO route_thr;
-
   				Period => 200ms APPLIES TO route_thr;
-
   				Deadline => 190ms APPLIES TO route_thr;
-
   				Priority => 2 APPLIES TO route_thr;
-
   				
-
   				--network_module_communication_out_thread
-
   				Dispatch_Protocol => Periodic APPLIES TO network_module_communication_out_thr;
-
   				Compute_Execution_Time => 1ms .. 10ms APPLIES TO network_module_communication_out_thr;
-
   				Period => 10000ms APPLIES TO network_module_communication_out_thr;
-
   				Deadline => 200ms APPLIES TO network_module_communication_out_thr;
-
   				Priority => 1 APPLIES TO network_module_communication_out_thr;
-
 		END controller.impl;
-
 		
-
 		
-
 		---------------------------------------------
-
 		-----------------SUBPROGRAMS-----------------
-
 		---------------------------------------------		
-
 		
-
 		------------------
-
 		------FLY_SPG-----
-
 		------------------
-
 		SUBPROGRAM Fly_Spg
-
 			FEATURES 
-
 				weight_is_ok : IN PARAMETER dron_types::weight_out;
-
 				route_in : IN PARAMETER dron_types::direction_route.impl;
-
 				wind : IN PARAMETER dron_types::wind.impl;
-
 				camera_in : IN PARAMETER dron_types::camera.impl;
-
 				control_out : OUT PARAMETER dron_types::control_out.impl;
-
 			PROPERTIES
-
 				source_language => (C);
-
 				source_name => "fly_thread";
-
 				source_text => ("dron.c");
-
 		END Fly_Spg;
-
 		
-
 		------------------
-
 		----ROUTE_SPG-----
-
 		------------------
-
 		SUBPROGRAM Route_Spg
-
 			FEATURES 
-
 				height_in : IN PARAMETER dron_types::height;
-
 				GPS_in : IN PARAMETER dron_types::GPS.impl;
-
 				net_in : IN PARAMETER dron_types::net_in.impl;
-
 				compass_in : IN PARAMETER dron_types::compass;
-
 				pos_out : OUT PARAMETER dron_types::position.impl; 
-
 				direc_out : OUT PARAMETER dron_types::direction_route.impl; 
-
 			PROPERTIES
-
 				source_language => (C);
-
 				source_name => "route_thread";
-
 				source_text => ("dron.c");
-
 		END Route_Spg;
-
 		
-
 		------------------
-
 		----NET_IN_SPG----
-
 		------------------
-
 		SUBPROGRAM Net_in_Spg
-
 			FEATURES 
-
 				network_in : IN PARAMETER dron_types::network.impl;
-
 				net_route_out : OUT PARAMETER  dron_types::net_in.impl;
-
 				net_weight_out : OUT PARAMETER  dron_types::weight;
-
 			PROPERTIES
-
 				source_language => (C);
-
 				source_name => "network_module_communication_in_thread";
-
 				source_text => ("dron.c");
-
 		END Net_in_Spg;
-
 		
-
 		------------------
-
 		----NET_OUT_SPG---
-
 		------------------
-
 		SUBPROGRAM Net_out_Spg
-
 			FEATURES 
-
 				weight_in : IN PARAMETER dron_types::weight_out;
-
 				pos_in : IN PARAMETER dron_types::position.impl;
-
 				net_out : OUT PARAMETER dron_types::network.impl;
-
 			PROPERTIES
-
 				source_language => (C);
-
 				source_name => "network_module_communication_out_thread";
-
 				source_text => ("dron.c");
-
 		END Net_out_Spg;
-
 		
-
 		------------------
-
 		----WEIGHT_SPG----
-
 		------------------
-
 		SUBPROGRAM Weight_Spg
-
 			FEATURES 
-
 				weight_net_in : IN PARAMETER dron_types::weight;	
-
 				weight_in : IN PARAMETER dron_types::weight;
-
 				weight_out : OUT PARAMETER  dron_types::weight_out;
-
 			PROPERTIES
-
 				source_language => (C);
-
 				source_name => "weight_thread";
-
 				source_text => ("dron.c");
-
 		END Weight_Spg;
-
 		
-
 		
-
 		---------------------------------------------
-
 		-------------------THREADS-------------------
-
 		---------------------------------------------
-
 		
-
 		-----------------
-
 		--------FLY------
-
 		--------THREAD---
-
 		-----------------
-
 		--fly thread is responsible for flight activity and avoiding obstacles that might occur during the flight
-
 		THREAD fly_thread
-
 			FEATURES
-
 				route_in : IN DATA PORT dron_types::direction_route.impl;
-
 				flying_module_out : OUT DATA PORT dron_types::control_out.impl;
-
 				weight_in : IN DATA PORT dron_types::weight_out;
-
 				wind_in : IN DATA PORT dron_types::wind.impl;	
-
 				camera_in : IN DATA PORT dron_types::camera.impl;
-
 		END fly_thread;
-
 		 
-
 		THREAD IMPLEMENTATION fly_thread.impl
-
 	CALLS
-
 		Mycalls: {
-
 			F_Spg: SUBPROGRAM Fly_Spg;
-
 		};
-
 	connections
-
-
 
 		fly_thread_impl_new_connection2: parameter camera_in -> F_Spg.camera_in;
-
 		fly_thread_impl_new_connection3: parameter wind_in -> F_Spg.wind;
-
 		fly_thread_impl_new_connection4: parameter route_in -> F_Spg.route_in;
-
 		fly_thread_impl_new_connection5: parameter weight_in -> F_Spg.weight_is_ok;
-
 		fly_thread_impl_new_connection: parameter F_Spg.control_out -> flying_module_out;
-
 end fly_thread.impl;
-
 		
-
 		-------------------
-
 		-------ROUTE-------
-
 		------THREAD-------
-
 		-------------------
-
 		--route thread is responsible for drone's moving properly
-
 		THREAD route_thread
-
 			FEATURES
-
 				height_in : IN DATA PORT dron_types::height;
-
 				GPS_in : IN DATA PORT dron_types::GPS.impl;
-
 				net_in : IN DATA PORT dron_types::net_in.impl;
-
 				compass_in : IN DATA PORT dron_types::compass;
-
 				pos_out : OUT DATA PORT dron_types::position.impl; 
-
 				direc_out : OUT DATA PORT dron_types::direction_route.impl; 
-
 		END route_thread;
-
 		
-
 		THREAD IMPLEMENTATION route_thread.impl
-
 	CALLS
-
 		Mycalls: {
-
 			R_Spg: SUBPROGRAM Route_Spg;
-
 		};
-
 	connections
-
 		route_thread_impl_new_connection: parameter R_Spg.direc_out -> direc_out;
-
 		route_thread_impl_new_connection2: parameter R_Spg.pos_out -> pos_out;
-
 		route_thread_impl_new_connection3: parameter GPS_in -> R_Spg.GPS_in;
-
 		route_thread_impl_new_connection4: parameter height_in -> R_Spg.height_in;
-
 		route_thread_impl_new_connection5: parameter compass_in -> R_Spg.compass_in;
-
 		route_thread_impl_new_connection6: parameter net_in -> R_Spg.net_in;
-
 end route_thread.impl;
 
-
-
 		---------------------------------------------
-
 		---------NETWORK_COMMUNICATION_IN------------		
-
 		----------------THREAD-----------------------
-
 		---------------------------------------------
-
 		--network module communication in is responsible for information about possible obstacles
-
 		THREAD network_module_communication_in_thread
-
 			FEATURES
-
 				network_in : IN DATA PORT dron_types::network.impl;
-
 				net_route_out : OUT DATA PORT dron_types::net_in.impl;
-
 				net_weight_out : OUT DATA PORT dron_types::weight;
-
 		END network_module_communication_in_thread;
-
 		
-
 		THREAD IMPLEMENTATION network_module_communication_in_thread.impl
-
 	CALLS
-
 		Mycalls: {
-
 			N_in_Spg: SUBPROGRAM Net_in_Spg;
-
 		};
-
 	connections
-
 		network_module_communication_in_thread_impl_new_connection: parameter network_in -> N_in_Spg.network_in;
-
 		network_module_communication_in_thread_impl_new_connection2: parameter N_in_Spg.net_route_out -> net_route_out;
-
 		network_module_communication_in_thread_impl_new_connection3: parameter N_in_Spg.net_weight_out -> net_weight_out;
-
 end network_module_communication_in_thread.impl;
-
 		
-
 		---------------------------------------------
-
 		---------NETWORK_COMMUNICATION_OUT-----------		
-
 		----------------THREAD-----------------------
-
 		---------------------------------------------
-
 		--network module communication out is responsible for sending communicates about decisions
-
 		THREAD network_module_communication_out_thread
-
 			FEATURES
-
 				weight_in : IN DATA PORT dron_types::weight_out;
-
 				pos_in : IN DATA PORT dron_types::position.impl;
-
 				net_out : OUT DATA PORT dron_types::network.impl;
-
 		END network_module_communication_out_thread;
-
 		
-
 		THREAD IMPLEMENTATION network_module_communication_out_thread.impl
-
 	CALLS
-
 		Mycalls: {
-
 			N_out_Spg: SUBPROGRAM Net_out_Spg;
-
 		};
-
 	connections
-
 		network_module_communication_out_thread_impl_new_connection: parameter N_out_Spg.net_out -> net_out;
-
 		network_module_communication_out_thread_impl_new_connection2: parameter weight_in -> N_out_Spg.weight_in;
-
 		network_module_communication_out_thread_impl_new_connection3: parameter pos_in -> N_out_Spg.pos_in;
-
 end network_module_communication_out_thread.impl;
-
 		
-
 		--------------------
-
 		-----WEIGHT---------
-
 		-----THREAD---------
-
 		--------------------
-
 		--weight thread is responsible for controlling weight of parcel
-
 		THREAD weight_thread
-
 			FEATURES
-
 				weight_net_in : IN DATA PORT dron_types::weight;	
-
 				weight_in : IN DATA PORT dron_types::weight;
-
 				weight_out : OUT DATA PORT  dron_types::weight_out;
-
 		END weight_thread;
 
-
-
 		THREAD IMPLEMENTATION weight_thread.impl
-
 	CALLS
-
 		Mycalls: {
-
 			W_Spg: SUBPROGRAM Weight_Spg;
-
 		};
-
 	connections
-
 		weight_thread_impl_new_connection: parameter weight_net_in -> W_Spg.weight_net_in;
-
 		weight_thread_impl_new_connection2: parameter weight_in -> W_Spg.weight_in;
-
 		weight_thread_impl_new_connection3: parameter W_Spg.weight_out -> weight_out;
-
 end weight_thread.impl;
-
 		
-
 		
-
 		---------------------------------------------
-
 		-------------------SYSTEM--------------------
-
 		---------------------------------------------	
-
 		
-
 		--------------------
-
 		---DRONE_MANAGER----
-
 		------SYSTEM--------
-
 		--------------------
-
 		--drone manager is our system
-
 		SYSTEM drone_manager
-
 		END drone_manager;
-
 		
-
 		SYSTEM IMPLEMENTATION drone_manager.v1
-
 			SUBCOMPONENTS
-
 				cpu: PROCESSOR cpu;
-
 				controller_process: PROCESS controller.impl;
-
 				flying_module_device: DEVICE flying_module;
-
 				height_sensor_device: DEVICE height_sensor;
-
 				weight_sensor_device: DEVICE weight_sensor;
-
 				GPS_module_device: DEVICE GPS_module;
-
 				wind_sensor_device: DEVICE wind_sensor;
-
 				network_module_device: DEVICE network_module;
-
 				camera_device: DEVICE camera;
-
 				comapss_device: DEVICE compass;
-
 				VME: BUS VME;
-
 				RAM: MEMORY RAM;
-
 			CONNECTIONS
-
 				bus_flying_module_conn : BUS ACCESS VME <-> flying_module_device.VME;
-
 				bus_height_sensor_conn : BUS ACCESS VME -> height_sensor_device.VME;
-
 				bus_weight_sensor_conn : BUS ACCESS VME -> weight_sensor_device.VME;	
-
 				bus_GPS_module_conn : BUS ACCESS VME -> GPS_module_device.VME;
-
 				bus_wind_sensor_conn : BUS ACCESS VME -> wind_sensor_device.VME;	
-
 				bus_network_module_conn : BUS ACCESS VME -> network_module_device.VME;	
-
 				bus_camera_conn : BUS ACCESS VME -> camera_device.VME;
-
 				bus_comapss_conn : BUS ACCESS VME -> comapss_device.VME;	
-
 				bus_cpu_conn : BUS ACCESS VME -> cpu.VME;
-
 				bus_ram_conn : BUS ACCESS VME -> RAM.VME;
-
 				weight_sensor_controller_conn : PORT weight_sensor_device.weight_out -> controller_process.weight_in;
-
 				GPS_module_controller_conn : PORT GPS_module_device.GPS_out -> controller_process.GPS_in;
-
 				height_sensor_controller_conn : PORT height_sensor_device.height_out -> controller_process.height_in;
-
 				camera_controller_conn : PORT camera_device.camera_out -> controller_process.camera_in;
-
 				controller_flying_module_conn : PORT controller_process.control_out -> flying_module_device.control_in;
-
 				wind_sensor_controller_conn : PORT wind_sensor_device.wind_out -> controller_process.wind_in;
-
 				controller_network_module_conn : PORT controller_process.network_out -> network_module_device.network_in;
-
 				network_module_contoller_conn : PORT network_module_device.network_out -> controller_process.network_in;
-
 				compass_controller_conn : PORT comapss_device.compass_out -> controller_process.compass_in;
-
 			PROPERTIES
-
 				Actual_Processor_Binding => (reference (cpu)) applies to controller_process;
-
 				Actual_Memory_Binding => (reference (ram)) applies to controller_process;
-
 				Actual_Connection_Binding => (reference (VME)) applies to controller_flying_module_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to wind_sensor_controller_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to controller_network_module_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to network_module_contoller_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to compass_controller_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to weight_sensor_controller_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to GPS_module_controller_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to height_sensor_controller_conn;
-
 				Actual_Connection_Binding => (reference (VME)) applies to camera_controller_conn;
-
 		END drone_manager.v1;
-
 		
-
 		
-
 END syst;
