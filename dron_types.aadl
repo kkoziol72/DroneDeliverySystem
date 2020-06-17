@@ -1,399 +1,200 @@
 PACKAGE dron_types
 
-
-
 PUBLIC
 
-
-
 --	WITH ARAO;
-
 	WITH Data_Model;
-
 	WITH Base_Types;
 
-
-
 	
-
 	---------------------------------------------
-
 	-------------------DATA----------------------
-
 	---------------------------------------------
-
 		
-
 	-----------
-
 	--WEIGHT---
-
 	-----------
-
 	DATA weight
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => float;
-
 	END weight;
-
 	
-
 	------------
-
 	--COMPASS---
-
 	------------
-
 	DATA Compass
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => float;
-
 	END Compass;
-
 	
-
 	------------
-
 	--NETWORK---
-
 	------------
-
 	DATA network
-
 		PROPERTIES
-
 			Data_Model::Base_Type => (
-
 				classifier(Base_Types::Character)
-
 			);
-
 			Data_Model::Data_Representation => array;
-
 			Data_Model::Dimension => (64, 1);
-
 			--Source_Name => "char[20]";
-
 	end network;
-
 	
-
 	DATA IMPLEMENTATION network.impl
-
 	end network.impl;
-
 	
-
 	-----------
-
 	---NET_IN--
-
 	-----------
-
 	DATA net_in
-
 	END net_in;
-
 	
-
 	DATA IMPLEMENTATION net_in.impl
-
 		SUBCOMPONENTS
-
 			x: DATA dron_types::float;
-
 			y: DATA dron_types::float;
-
 			z: DATA dron_types::float;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end net_in.impl;
-
 	
-
 	--------
-
 	--GPS---
-
 	--------
-
 	DATA GPS
-
 	END GPS;
-
 	
-
 	DATA IMPLEMENTATION GPS.impl
-
 		SUBCOMPONENTS
-
 			x: DATA dron_types::float;
-
 			y: DATA dron_types::float;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end GPS.impl;
-
 	
-
 	-----------
-
 	--HEIGHT---
-
 	-----------
-
 	DATA height
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => float;
-
 	END height;
-
 	
-
 	------------
-
 	--CAMERA----
-
 	DATA camera
-
 	END camera;
-
 	
-
 	DATA IMPLEMENTATION camera.impl
-
 		SUBCOMPONENTS
-
 			distance1: DATA dron_types::float;
-
 			distance2: DATA dron_types::float;
-
 			distance3: DATA dron_types::float;
-
 			distance4: DATA dron_types::float;
-
 			distance5: DATA dron_types::float;
-
 			distance6: DATA dron_types::float;
-
 			distance7: DATA dron_types::float;
-
 			distance8: DATA dron_types::float;
-
 			distance9: DATA dron_types::float;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end camera.impl;
-
 	
-
 	---------
-
 	---WIND--
-
 	---------
-
 	DATA wind
-
 	END wind;
-
 	
-
 	DATA IMPLEMENTATION wind.impl
-
 		SUBCOMPONENTS
-
 			direction: DATA dron_types::float;
-
 			speed: DATA dron_types::float;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end wind.impl;
-
 	
-
 	-------------
-
 	--POSITION---
-
 	-------------
-
 	DATA position
-
 	END position;
-
 	
-
 	DATA IMPLEMENTATION position.impl
-
 		SUBCOMPONENTS
-
 			x: DATA dron_types::float;
-
 			y: DATA dron_types::float;
-
 			direction: DATA dron_types::float;
-
 			height: DATA dron_types::float;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end position.impl;
-
 	
-
 	----------
-
 	--ROUTE---
-
 	----------
-
 	
-
 	DATA direction_horizontal
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => float;
-
 	END direction_horizontal;
-
 	
-
 	DATA landing
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => boolean;
-
 	END landing;
-
 	
-
 	DATA direction_route
-
 	END direction_route;
-
 	
-
 	DATA IMPLEMENTATION direction_route.impl
-
 		SUBCOMPONENTS
-
 			direction_horizontal: DATA dron_types::direction_horizontal;
-
 			landing: DATA dron_types::landing;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end direction_route.impl;
-
 	
-
 	--------------
-
 	--DIRECTION---
-
 	--------------
-
 	DATA direction
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => float;
-
 	END direction;
-
 	
-
 	-------------
-
 	---CONTROLL--
-
 	-------------
-
 	
-
 	DATA float
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => float;
-
 	END float;
 
-
-
 	DATA control_out
-
 	END control_out;
 
-
-
 	
-
 	DATA IMPLEMENTATION control_out.impl
-
 		SUBCOMPONENTS
-
 			force: DATA dron_types::float;
-
 			angle: DATA dron_types::float;
-
 			direction1: DATA dron_types::float;
-
 			direction2: DATA dron_types::float;
-
 			direction3: DATA dron_types::float;
-
 			direction4: DATA dron_types::float;
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => struct;	
-
 	end control_out.impl;
-
 	
-
 	--------------
-
 	--WEIGHT_OK---
-
 	--------------
-
 	DATA weight_out
-
 		PROPERTIES
-
 			Data_Model::Data_Representation => boolean;	
-
 	END weight_out;
-
 	
-
 	
-
 END dron_types;
